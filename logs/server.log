@@ -3,31 +3,12 @@
 > vite
 
 
-  VITE v5.4.20  ready in 230 ms
+  VITE v5.4.20  ready in 246 ms
 
   ➜  Local:   http://localhost:3000/
   ➜  Network: http://172.20.0.135:3000/
-12:58:55 AM [vite] Pre-transform error: Failed to resolve import "@zxing/library" from "src/components/Scanner.jsx". Does the file exist?
-12:58:58 AM [vite] Internal server error: Failed to resolve import "@zxing/library" from "src/components/Scanner.jsx". Does the file exist?
-  Plugin: vite:import-analysis
-  File: /home/workspace/src/components/Scanner.jsx:3:41
-  2  |  import React, { useEffect, useRef, useState } from "react";
-  3  |  import { Camera, Keyboard, X } from "lucide-react";
-  4  |  import { BrowserMultiFormatReader } from "@zxing/library";
-     |                                            ^
-  5  |  export default function Scanner({ open, onClose, onDetected }) {
-  6  |    const videoRef = useRef(null);
-      at TransformPluginContext._formatError (file:///home/workspace/node_modules/vite/dist/node/chunks/dep-D_zLpgQd.js:49258:41)
-      at TransformPluginContext.error (file:///home/workspace/node_modules/vite/dist/node/chunks/dep-D_zLpgQd.js:49253:16)
-      at normalizeUrl (file:///home/workspace/node_modules/vite/dist/node/chunks/dep-D_zLpgQd.js:64306:23)
-      at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
-      at async file:///home/workspace/node_modules/vite/dist/node/chunks/dep-D_zLpgQd.js:64438:39
-      at async Promise.all (index 3)
-      at async TransformPluginContext.transform (file:///home/workspace/node_modules/vite/dist/node/chunks/dep-D_zLpgQd.js:64365:7)
-      at async PluginContainer.transform (file:///home/workspace/node_modules/vite/dist/node/chunks/dep-D_zLpgQd.js:49099:18)
-      at async loadAndTransform (file:///home/workspace/node_modules/vite/dist/node/chunks/dep-D_zLpgQd.js:51977:27)
-      at async viteTransformMiddleware (file:///home/workspace/node_modules/vite/dist/node/chunks/dep-D_zLpgQd.js:62105:24)
-12:59:21 AM [vite] Internal server error: Failed to resolve import "@zxing/library" from "src/components/Scanner.jsx". Does the file exist?
+1:01:00 AM [vite] Pre-transform error: Failed to resolve import "@zxing/library" from "src/components/Scanner.jsx". Does the file exist?
+1:01:02 AM [vite] Internal server error: Failed to resolve import "@zxing/library" from "src/components/Scanner.jsx". Does the file exist?
   Plugin: vite:import-analysis
   File: /home/workspace/src/components/Scanner.jsx:3:41
   2  |  import React, { useEffect, useRef, useState } from "react";
