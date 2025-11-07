@@ -9,60 +9,47 @@ export default function App() {
   const [scans, setScans] = useState([]);
   const [scanCount, setScanCount] = useState(0);
 
-  const recommended = useMemo(() => (
-    [
-      { id: 'alt-1', name: 'Eco Dish Soap', brand: 'GreenGrove', footprintKgCO2e: 0.92, rating: 82 },
-      { id: 'alt-2', name: 'Bamboo Toothbrush', brand: 'PureEarth', footprintKgCO2e: 0.15, rating: 91 },
-      { id: 'alt-3', name: 'Reusable Produce Bags', brand: 'LeafyLoop', footprintKgCO2e: 0.05, rating: 88 },
-    ]
-  ), []);
+  const onDetected = (barcodeText) => {
+    const last4 = barcodeText.slice(-4).padStart(4, '0');
+    const ratingScale = ['A', 'B', 'C', 'D', 'E'];
+    const rating = ratingScale[parseInt(last4, 10) % ratingScale.length];
+    const footprint = (parseInt(last4, 10) % 1200) / 10 + 0.5; // 0.5 to 120.5 kg CO2e
 
-  const onDetected = (code) => {
-    // Simple mock: turn a barcode into a product entry
     const product = {
-      id: code,
-      name: `Scanned Product ${code.slice(0, 4)}`,
-      brand: 'Unknown Brand',
-      footprintKgCO2e: (code.length % 10) + 0.37,
-      rating: Math.max(20, 100 - (parseInt(code.slice(-2), 10) % 85)),
+      id: `${Date.now()}-${barcodeText}`,
+      name: `Product ${last4}`,
+      brand: 'Mock Brand',
+      footprintKgCO2e: footprint.toFixed(1),
+      rating,
     };
-    setScans((prev) => [product, ...prev].slice(0, 6));
+
+    setScans((prev) => [product, ...prev]);
     setScanCount((c) => c + 1);
   };
 
+  const recommended = useMemo(
+    () => [
+      { id: 'alt-1', name: 'EcoWash Detergent', brand: 'GreenDrop', footprintKgCO2e: '1.8', rating: 'A' },
+      { id: 'alt-2', name: 'Plant-Based Milk', brand: 'Oat & Co.', footprintKgCO2e: '0.9', rating: 'A' },
+      { id: 'alt-3', name: 'Bamboo Toothbrush', brand: 'TerraSmile', footprintKgCO2e: '0.2', rating: 'A' },
+    ],
+    []
+  );
+
   const handleLogin = () => {
-    alert('Sign-in is currently disabled in this preview. The Client ID setup page has been removed.');
+    alert('Sign-in is currently disabled in this sandbox build.');
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-emerald-50 via-white to-white">
-      <Navbar
-        user={null}
-        onLogin={handleLogin}
-        onLogout={() => {}}
-        onToggleHistory={() => {}}
-        scanCount={scanCount}
-      />
+    <div className="min-h-screen bg-gradient-to-b from-black via-neutral-900 to-black">
+      <Navbar onLogin={handleLogin} onLogout={() => {}} onToggleHistory={() => {}} scanCount={scanCount} />
 
-      <main>
-        <Hero onScan={() => setScannerOpen(true)} />
+      <Hero onScan={() => setScannerOpen(true)} />
 
-        {scans.length > 0 && (
-          <ProductList title="Your recent scans" products={scans} />
-        )}
+      <ProductList title="Recent scans" products={scans} />
+      <ProductList title="Greener alternatives" products={recommended} />
 
-        <ProductList title="Greener alternatives" products={recommended} />
-      </main>
-
-      <Scanner
-        open={scannerOpen}
-        onClose={() => setScannerOpen(false)}
-        onDetected={onDetected}
-      />
-
-      <footer className="py-10 text-center text-sm text-slate-500">
-        Built for a smoother eco-friendly shopping experience.
-      </footer>
+      <Scanner open={scannerOpen} onClose={() => setScannerOpen(false)} onDetected={onDetected} />
     </div>
   );
 }
