@@ -1,50 +1,48 @@
 import React from 'react';
-import { Leaf, History } from 'lucide-react';
+import { Leaf, History, LogIn, LogOut, User } from 'lucide-react';
 
-const Navbar = ({ onShowHistory, scansCount, score = 62, logoUrl }) => {
+export default function Navbar({ user, onLogin, onLogout, onToggleHistory, scanCount = 0 }) {
   return (
-    <header className="w-full sticky top-0 z-20 backdrop-blur bg-white/70 border-b">
-      <div className="max-w-5xl mx-auto px-4 py-3 flex items-center justify-between">
-        <div className="flex items-center gap-3">
-          {logoUrl ? (
-            <img src={logoUrl} alt="EcoShopper logo" className="h-9 w-9 rounded-lg object-cover" />
-          ) : (
-            <div className="h-9 w-9 rounded-lg bg-emerald-100 text-emerald-700 grid place-items-center">
-              <Leaf className="h-5 w-5" />
-            </div>
-          )}
-          <div>
-            <h1 className="text-lg font-semibold tracking-tight">EcoShopper</h1>
-            <p className="text-xs text-gray-500 -mt-0.5">Sustainable Shopping Assistant</p>
-          </div>
+    <header className="sticky top-0 z-40 w-full backdrop-blur supports-[backdrop-filter]:bg-white/60 bg-white/80 border-b border-slate-200">
+      <div className="mx-auto max-w-6xl px-4 py-3 flex items-center justify-between">
+        <div className="flex items-center gap-2">
+          <Leaf className="h-6 w-6 text-emerald-600" />
+          <span className="font-semibold text-slate-800">EcoShopper</span>
         </div>
-
-        <div className="flex items-center gap-3">
-          <div className="hidden sm:flex items-center gap-2 text-sm text-gray-600">
-            <span className="h-2 w-12 bg-gray-200 rounded overflow-hidden">
-              <span className="block h-full bg-emerald-600" style={{ width: `${score}%` }} />
-            </span>
-            <span className="font-medium text-gray-800">{score}</span>
-          </div>
-
+        <div className="flex items-center gap-2">
           <button
-            onClick={onShowHistory}
-            className="inline-flex items-center gap-2 rounded-md border px-3 py-2 text-sm hover:bg-gray-50"
-            aria-label="View scan history"
+            onClick={onToggleHistory}
+            className="inline-flex items-center gap-2 rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-sm text-slate-700 hover:bg-slate-50"
           >
             <History className="h-4 w-4" />
             History
-            {typeof scansCount === 'number' && (
-              <span className="ml-1 inline-flex items-center justify-center h-5 min-w-[1.25rem] rounded bg-emerald-600 text-white text-xs px-1">
-                {scansCount}
+            {scanCount > 0 && (
+              <span className="ml-1 rounded-full bg-emerald-600 px-2 py-0.5 text-xs font-medium text-white">
+                {scanCount}
               </span>
             )}
           </button>
+
+          {user ? (
+            <button
+              onClick={onLogout}
+              className="inline-flex items-center gap-2 rounded-lg bg-emerald-600 px-3 py-1.5 text-sm text-white hover:bg-emerald-700"
+            >
+              <User className="h-4 w-4" />
+              Sign out
+              <LogOut className="h-4 w-4" />
+            </button>
+          ) : (
+            <button
+              onClick={onLogin}
+              className="inline-flex items-center gap-2 rounded-lg bg-slate-900 px-3 py-1.5 text-sm text-white hover:bg-slate-800"
+            >
+              <LogIn className="h-4 w-4" />
+              Sign in with Google
+            </button>
+          )}
         </div>
       </div>
     </header>
   );
-};
-
-export default Navbar;
 }

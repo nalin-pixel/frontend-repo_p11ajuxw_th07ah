@@ -1,120 +1,119 @@
-import React, { useEffect, useMemo, useState } from 'react';
-import Navbar from './components/Navbar.jsx';
-import Hero from './components/Hero.jsx';
-import ProductList from './components/ProductList.jsx';
-import GreenScore from './components/GreenScore.jsx';
-import Scanner from './components/Scanner.jsx';
-import DetailsPanel from './components/DetailsPanel.jsx';
+import React, { useCallback, useMemo, useState } from 'react';
+import Navbar from './components/Navbar';
+import LoginCard from './components/LoginCard';
+import Dashboard from './components/Dashboard';
+import ErrorBanner from './components/ErrorBanner';
 
-// Lightweight mock catalog for eco score demo (used for recommendations)
-const CATALOG = [
-  { id: '0001', name: 'Organic Oat Milk 1L', brand: 'GreenFields', footprintKgCO2e: 0.7, rating: 88 },
-  { id: '0002', name: 'Beef Jerky Pack', brand: "Trail King's", footprintKgCO2e: 6.3, rating: 32 },
-  { id: '0003', name: 'Plant-Based Protein Bar', brand: 'EcoFuel', footprintKgCO2e: 0.9, rating: 76 },
-  { id: '0004', name: 'Recycled Paper Towels', brand: 'PlanetCare', footprintKgCO2e: 0.4, rating: 90 },
-  { id: '0005', name: 'Aluminum Water Bottle', brand: 'EverSip', footprintKgCO2e: 1.1, rating: 81 },
-];
+// Minimal JWT decoder (no external deps). Does not verify signature (that should be done server-side),
+// but we only use it client-side to display basic profile info and expiration handling.
+function decodeJwt(token) {
+  try {
+    const [, payload] = token.split('.');
+    const json = atob(payload.replace(/-/g, '+').replace(/_/g, '/'));
+    return JSON.parse(decodeURIComponent(escape(json)));
+  } catch {
+    return null;
+  }
+}
 
-const backendBase = import.meta.env.VITE_BACKEND_URL || (typeof window !== 'undefined' ? window.location.origin.replace(':3000', ':8000') : '');
-
-function App() {
-  const [history, setHistory] = useState([]);
-  const [showHistory, setShowHistory] = useState(false);
-  const [scannerOpen, setScannerOpen] = useState(false);
-  const [selected, setSelected] = useState(null);
-  const [loadingHistory, setLoadingHistory] = useState(false);
-
-  useEffect(() => {
-    // Load persisted scans from backend on first load
-    const load = async () => {
-      try {
-        setLoadingHistory(true);
-        const res = await fetch(`${backendBase}/history`);
-        if (!res.ok) throw new Error('Failed to load history');
-        const data = await res.json();
-        // Ensure unique id field
-        const normalized = (data || []).map((d, idx) => ({ ...d, id: d.id || `${d.code}-${idx}` }));
-        setHistory(normalized);
-      } catch (e) {
-        // fail soft: no history available
-      } finally {
-        setLoadingHistory(false);
-      }
+export default function App() {
+  const [error, setError] = useState('');
+  const [idToken, setIdToken] = useState(null); // kept in-memory only
+  const user = useMemo(() => {
+    if (!idToken) return null;
+    const data = decodeJwt(idToken);
+    if (!data) return null;
+    const now = Math.floor(Date.now() / 1000);
+    if (data.exp && data.exp < now) return null;
+    return {
+      name: data.name || data.given_name || 'User',
+      email: data.email,
+      picture: data.picture,
+      sub: data.sub,
     };
-    load();
+  }, [idToken]);
+
+  const handleLoginSuccess = useCallback((credential) => {
+    // Basic client-side safety: clear previous errors, set token in memory only
+    setError('');
+    setIdToken(credential);
   }, []);
 
-  const score = useMemo(() => {
-    if (history.length === 0) return 62; // baseline demo score
-    const avg = history.reduce((acc, p) => acc + (p.rating ?? 60), 0) / history.length;
-    return Math.round(Math.min(100, Math.max(1, avg)));
-  }, [history]);
+  const handleLoginError = useCallback((e) => {
+    setError(e?.message || 'Sign-in failed. Please try again.');
+  }, []);
 
-  const handleFakeScan = async () => {
-    // Simulate: choose a high-rated item for demo purposes
-    const item = CATALOG[Math.floor(Math.random() * CATALOG.length)];
-    const enriched = { ...item, scannedAt: Date.now(), id: `${item.id}-${Date.now()}` };
-    setHistory((prev) => [enriched, ...prev]);
-    setShowHistory(true);
-  };
-
-  const handleDetected = async (code) => {
-    try {
-      const res = await fetch(`${backendBase}/scan`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ code }),
-      });
-      if (!res.ok) throw new Error('Scan failed');
-      const data = await res.json();
-      const item = { ...data, id: data.id || `${data.code}-${Date.now()}` };
-      setHistory((prev) => [item, ...prev]);
-      setSelected(item);
-      setShowHistory(true);
-    } catch (e) {
-      // fallback: create a minimal item if backend fails
-      const item = { id: `${code}-${Date.now()}`, code, name: 'Product', manufacturer: 'Unknown', category: 'General Merchandise', rating: 60, footprintKgCO2e: 2.0, scannedAt: Date.now() };
-      setHistory((prev) => [item, ...prev]);
-      setSelected(item);
-      setShowHistory(true);
-    }
-  };
-
-  const recommendations = useMemo(() => CATALOG.filter((p) => p.rating >= 75), []);
-
-  const logoUrl = 'https://lh3.googleusercontent.com/gg-dl/ABS2GSlT7HRQg1ODqqtR8D_O_qLvXbj1aw8RDbiW7QIi2bEgmXVaerxxzzqMTBzyG7_MjlDDf4wm-3Pls4flVaZJduz6ysgkH4g8HNxom55SPby-nZlCjvK3TSiS7wUra37xa1qMlFw9FoJ0la7DPBp74mREtJu6_eYOyIy6vLvFMSP-MTnS=s1024';
+  const handleLogout = useCallback(() => {
+    setIdToken(null);
+    setError('');
+  }, []);
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-emerald-50 via-white to-sky-50 text-gray-900">
-      <Navbar onShowHistory={() => setShowHistory((s) => !s)} scansCount={history.length} score={score} logoUrl={logoUrl} />
+    <div className="min-h-screen bg-gradient-to-b from-emerald-50 via-white to-white">
+      <ErrorBanner message={error} onClose={() => setError('')} />
 
-      <Hero onScan={() => setScannerOpen(true)} />
+      <Navbar
+        user={user}
+        onLogin={() => {
+          // no-op: the LoginCard renders the real Google button on the page
+          const el = document.getElementById('googleBtn');
+          if (el) el.focus();
+        }}
+        onLogout={handleLogout}
+        onToggleHistory={() => setError('History is available after you connect the backend.')} // placeholder UX
+        scanCount={0}
+      />
 
-      <div className="max-w-5xl mx-auto px-4 -mt-4">
-        <button onClick={handleFakeScan} className="text-xs text-gray-500 underline">
-          Quick demo: simulate a scan
-        </button>
-      </div>
+      <main className="mx-auto max-w-6xl px-4 py-10">
+        {!user ? (
+          <div className="grid gap-8 md:grid-cols-2 items-center">
+            <div>
+              <h1 className="text-3xl md:text-4xl font-semibold text-slate-900 tracking-tight">
+                Sign in with Google to sync your eco scans securely
+              </h1>
+              <p className="mt-3 text-slate-600">
+                We use Google Identity Services for one-tap authentication. Your token stays in memory and is sent only over HTTPS if you connect a backend for verification.
+              </p>
+              <div className="mt-8">
+                <LoginCard onSuccess={handleLoginSuccess} onError={handleLoginError} />
+              </div>
+            </div>
+            <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+              <h3 className="text-lg font-semibold text-slate-800">What you get</h3>
+              <ul className="mt-4 space-y-3 text-slate-600">
+                <li>• Secure Google sign-in with tokens kept in-memory</li>
+                <li>• Auto-expiration handling for added safety</li>
+                <li>• Ready to integrate with a FastAPI backend token verifier</li>
+              </ul>
+            </div>
+          </div>
+        ) : (
+          <>
+            <Dashboard user={user} />
+            <section className="mx-auto max-w-6xl px-4">
+              <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+                <h4 className="text-slate-800 font-semibold">Account</h4>
+                <div className="mt-4 flex items-center gap-4">
+                  {user.picture && (
+                    <img src={user.picture} alt="Avatar" className="h-12 w-12 rounded-full border border-slate-200" />
+                  )}
+                  <div>
+                    <div className="font-medium text-slate-900">{user.name}</div>
+                    <div className="text-sm text-slate-600">{user.email}</div>
+                  </div>
+                </div>
+                <p className="mt-6 text-sm text-slate-600">
+                  For full verification and session management, connect a backend endpoint to validate this ID token with Google and issue an HTTP-only session cookie. This demo intentionally avoids localStorage for better security.
+                </p>
+              </div>
+            </section>
+          </>
+        )}
+      </main>
 
-      <GreenScore score={score} scans={history.length} />
-
-      {showHistory && (
-        <ProductList
-          title={loadingHistory ? 'Loading scans…' : 'Recent scans'}
-          products={history.map((h, idx) => ({ ...h, id: h.id || `${h.code || h.id}-${idx}` }))}
-        />
-      )}
-
-      <ProductList title="Recommended eco alternatives" products={recommendations} />
-
-      <footer className="max-w-5xl mx-auto px-4 py-10 text-center text-sm text-gray-500">
-        When you start a scan, your browser will ask for camera permission. Allow access to use the live barcode scanner. On unsupported browsers, manual entry is available.
+      <footer className="mx-auto max-w-6xl px-4 py-10 text-center text-sm text-slate-500">
+        Built with React, Tailwind, and Google Identity Services.
       </footer>
-
-      <Scanner open={scannerOpen} onClose={() => setScannerOpen(false)} onDetected={handleDetected} />
-      <DetailsPanel item={selected} onClose={() => setSelected(null)} />
     </div>
   );
 }
-
-export default App;
